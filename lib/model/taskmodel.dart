@@ -1,9 +1,9 @@
 class TaskModel {
-  final int id ;
+  final int? id ;
   final String task ;
   final DateTime dateTime ;
 
-  TaskModel({ required this.id, required this.task, required this.dateTime});
+  TaskModel({  this.id, required this.task, required this.dateTime});
 
 
   Map <String  , dynamic> toMap(){
