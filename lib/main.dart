@@ -12,6 +12,7 @@ class MyApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
+        debugShowCheckedModeBanner: false,
         title: 'Flutter Demo',
         theme: ThemeData(
           primarySwatch: Colors.blue,
@@ -30,13 +31,24 @@ class _MyTodoAppState extends State<MyTodoApp> {
   Color secondColor = Color(0xFF21061);
   Color btnColor = Color(0xFFff955b);
   Color editColor = Color(0xFF4044cc);
+  int currentIndex = 0;
 
   TextEditingController inputController = TextEditingController();
   String newTasksTxt = '';
+  String newTaskst = '';
+
   getTasks() async {
     final tasks = await DBProvider.dataBase.getTask();
     print(tasks);
     return tasks;
+  }
+
+  deleteTasks(int id) async {
+    return await DBProvider.dataBase.delete(id);
+  }
+
+  updateTasks(int id, task) async {
+    return await DBProvider.dataBase.update(task, id);
   }
 
   @override
@@ -54,47 +66,90 @@ class _MyTodoAppState extends State<MyTodoApp> {
                 builder: (context, AsyncSnapshot<dynamic> taskData) {
                   switch (taskData.connectionState) {
                     case ConnectionState.waiting:
-                      {
-                        return Center(
-                          child: CircularProgressIndicator(),
-                        );
-                      }
+                      return Center(
+                        child: CircularProgressIndicator(),
+                      );
+
                     case ConnectionState.done:
-                      {
-                        return Padding(
-                          padding: EdgeInsets.all(8.0),
-                          child: ListView.builder(
-                              itemCount: taskData.data.length,
-                              itemBuilder: (context, index) {
-                                String task = taskData.data[index].toString();
-                                String day = DateTime.parse(
-                                        taskData.data[index]['createdTime'])
-                                    .day
-                                    .toString();
-                                return Card(child: Text(task));
-                              }),
-                        );
-                      }
+                      return Padding(
+                        padding: EdgeInsets.all(8.0),
+                        child: ListView.builder(
+                            itemCount: taskData.data.length,
+                            itemBuilder: (context, index) {
+                              String tasks =
+                                  taskData.data[index]['task'].toString();
+                              String day = DateTime.parse(
+                                      taskData.data[index]['createdTime'])
+                                  .day
+                                  .toString();
+                              return Dismissible(
+                                key: Key(taskData.data[index]['task']),
+                                onDismissed: (direction) {
+                                  deleteTasks(taskData.data[index]['id']);
+                                  setState(() {
+                                    taskData.data.removeAt(index);
+                                  });
+                                },
+                                child: InkWell(
+                                  onTap: () {
+                                    currentIndex = index;
+                                    inputController.text =
+                                        taskData.data[index]['task'];
+                                  },
+                                  child: Card(
+                                    child: ListTile(
+                                      leading: CircleAvatar(child: Text(day)),
+                                      title: Text(tasks),
+                                      trailing: CircleAvatar(
+                                          backgroundColor: Colors.red,
+                                          child: IconButton(
+                                            icon: Icon(
+                                              Icons.edit,
+                                            ),
+                                            onPressed: () {
+                                              currentIndex = index;
+                                              taskData.data
+                                                  .update(currentIndex);
+                                              newTaskst = inputController.text;
+                                              setState(() {});
+                                            },
+                                          )),
+                                    ),
+                                  ),
+                                ),
+                              );
+                            }),
+                      );
+
                     case ConnectionState.none:
                       break;
                     case ConnectionState.active:
                       break;
+                  
                   }
                   return Container();
                 })),
         Container(
-          decoration: BoxDecoration(color: editColor),
+          padding: EdgeInsets.all(10),
+          decoration: BoxDecoration(
+              borderRadius: BorderRadius.only(
+                  topLeft: Radius.circular(20), topRight: Radius.circular(20)),
+              color: editColor),
           child: Row(
             children: [
               Expanded(
                   child: TextField(
                 controller: inputController,
                 decoration: InputDecoration(
+                  hintText: 'Que veux tu faire ?',
                   filled: true,
                   fillColor: Colors.white,
                 ),
               )),
               TextButton.icon(
+                  style: ButtonStyle(
+                      padding: MaterialStateProperty.all(EdgeInsets.all(12)),
+                      backgroundColor: MaterialStateProperty.all(Colors.black)),
                   onPressed: () {
                     setState(() {
                       newTasksTxt = inputController.text.toString();

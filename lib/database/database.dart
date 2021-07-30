@@ -15,29 +15,15 @@ class DBProvider {
   }
 
   initdatabase() async {
-
-    return await openDatabase(
-join(await getDatabasesPath(), 'notes.db'), onCreate : (db , version)async {
-  await db.execute('''
-  
-  CREATE TABLE tables(
-id INTEGER AUTOINCREMENT,
-task TEXT,
-createTime Text
-  )
-  ''');
-},version: 1
-    );
-/*     return openDatabase(join(await getDatabasesPath(), 'note.db'),
+    return openDatabase(join(await getDatabasesPath(), 'note.db'),
         onCreate: (db, version) async {
-      await db.execute('''
-      CREATE TABLE tables (
-        id INTEGER PRIMARY KEY AUTOINCREMENT,
-        task TEXT NOT NULL ,
-        createdTime TEXT NOT NULL,
-      )
-        ''');
-    }, version: 1); */
+      await db.execute("""
+        CREATE TABLE tables (
+          id INTEGER PRIMARY KEY AUTOINCREMENT,
+          task TEXT,createdTime TEXT
+        )
+        """);
+    }, version: 1);
   }
 
   addNewTask(TaskModel newTask) async {
@@ -48,12 +34,18 @@ createTime Text
 
   Future<dynamic> getTask() async {
     final db = await database;
-    var res = await db!.query('tables');
-    if (res.length == 0) {
-      return null;
-    } else {
-      var resultMap = res[0];
-      return resultMap.isNotEmpty ? resultMap : null;
-    }
+    return await db!.query('tables');
+
   }
+
+  Future <dynamic> delete(int id) async{
+    final db = await database;
+    return await db!.delete('tables',where: 'id = ?' , whereArgs:[id]);
+  }
+  Future<dynamic> update(TaskModel newTask , int id)async {
+    final db = await database;
+    return await db!.update('tables',newTask.toMap(),where: 'id = ?');
+  }
+
+ 
 }
